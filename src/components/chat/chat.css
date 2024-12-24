@@ -9,7 +9,15 @@
     box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
 }
 
-/* Заголовок чата */
+.container-v{
+    display: inline-flex;
+    flex-direction: row;
+    width: 90%;
+    gap: 1rem;
+    justify-content: space-between;
+    color: black;
+}
+
 .chat-header {
     text-align: center;
     font-size: 24px;
@@ -94,3 +102,32 @@
 .message-input button:hover {
     background-color: #45a049;
 }
+
+
+
+
+.chats-list{
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+    overflow-y: auto;
+}
+
+.chat{
+    color: #ffffff;
+    display: inline-flex;
+    flex-direction: row;
+    align-items: center;
+    gap: 1rem;
+
+    overflow-y: auto;
+}
+
+
+.chat img{
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    object-fit: cover;
+}
+

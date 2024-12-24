@@ -16,21 +16,52 @@ interface Message {
     userBaseId: string
 }
 
+interface Chat {
+    id: string
+    name: string
+    imageUrl: string
+    createdAt: string
+    members: Member[]
+}
+
+interface Member {
+    id: string;
+    banned: boolean;
+    role: string
+    about: string | null
+    name: string
+    createdAt: string
+    updatedAt: string
+}
+
+
 
 // eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjkwNzBhN2Q3LWVhNTQtNGEzZS05NTJhLWUyMTA0YzlhY2JmNiIsInJvbGUiOiJ1c2VyIiwiaWF0IjoxNzM1MDY0MjA5LCJleHAiOjE3MzUxNTA2MDl9.nnLOpiz3TkUMRDz-V6YODFa2ymC1IYBLy67Romu5b-A
 
-// eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjBkZTk2ZWM1LTc5NTYtNGFmNi05OGMwLTJjNDRkMmRiZTk0OCIsInJvbGUiOiJ1c2VyIiwiaWF0IjoxNzM1MDYzMTAzLCJleHAiOjE3MzUxNDk1MDN9.Z5vB3SScZIolnxDV0V-8HYsf5x0NJE5fHxQpCAKXOsc
+// eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjRiYzM3MGJlLTM3ODAtNGI5Yy1iMzQzLTYyMzk0ZGYwMjhkNyIsInJvbGUiOiJ1c2VyIiwiaWF0IjoxNzM1MDczNDEyLCJleHAiOjE3MzUxNTk4MTJ9.mOPN5Qac6I2wCq4VlEYAnAlstj0ecPdTwRqR3eWpKro
 export default function Chat() {
     const [message, setMessage] = useState<string>()
     const [messages, setMessages] = useState<Message[]>([])
-    const [token, setToken] = useState<string>("eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjNmZjU0YTY4LWJlZGMtNDY0NS1iZGQ3LTdmMmQyYWI1NTQzMSIsInJvbGUiOiJ1c2VyIiwiaWF0IjoxNzM1MDU4Mjc5LCJleHAiOjE3MzUxNDQ2Nzl9.A47i37WNwpP1P8gSLN0Brxc5BCWsTPzuslQmDnRpXoY")
+    const [token, setToken] = useState<string>("eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjJkZWJiYTg0LWM0YzAtNDBkNS1iOGNmLWRkMzk0YzRkOTY3YiIsInJvbGUiOiJ1c2VyIiwiaWF0IjoxNzM1MDcxMjAwLCJleHAiOjE3MzUxNTc2MDB9.waPa9jf53PxWJnrxPpZr3aj-hQi2_Yjc4CaFlLiOysY")
     const [tokenInput, setTokenInput] = useState<string>('')
+
+    const [chatData, setChatData] = useState<Chat>()
+
+    const [chats, setChats] = useState<Chat[]>([])
+
+
+    const [createChatInput, setCreateChatInput] = useState<string>('')
 
 
     const [user, setUser] = useState<any>()
 
+
+    
+
     let socket: Socket = io('ws://localhost:3001/chat', {
-        auth: { token }
+        auth: { token },
+        reconnection: true,
+
     });
 
     useEffect(() => {
@@ -38,43 +69,46 @@ export default function Chat() {
             console.log('Connected to WebSocket');
         });
 
-        socket.on('checkData', () => {
-            console.log('checked');
+        socket.on('checkData', (data: { chatData: Chat, userChats: Chat[] }) => {
+            console.log(data)
+
+            setChatData(data.chatData)
+
+            setChats(data.userChats)
+
             return
         });
 
-
-
         socket.on('loadMessages', (data: Message[]) => {
-            console.log(data)
             setMessages(data)
         });
 
 
-
         socket.on('message', (newMessage: Message[]) => {
-            console.log(newMessage)
+            // console.log(newMessage)
             setMessages((prevMessages) => [...prevMessages, ...newMessage])
 
-            console.log(messages)
+            // console.log(messages)
         })
 
-        socket.on('unauthorized', (message) => {
-            console.log('Authorization error:', message);
+        socket.on('error', (message) => {
+            console.log('error:', message);
             alert(message)
         });
 
 
 
+        socket.on('createChat', (newChat: Chat) => {
+            console.log(newChat)
+            setChats((prevChats) => [...prevChats, newChat])
+        });
 
         socket.emit('checkData');
         socket.emit('loadMessages');
 
-
         getUserData()
         return () => {
-            // socket.disconnect();
-            socket.off('message')
+            socket.off()
         };
     }, [token])
 
@@ -85,11 +119,11 @@ export default function Chat() {
             }
         })
 
+        
         const data = await response.json()
 
         console.log(data)
         setUser(data)
-
     }
 
 
@@ -101,13 +135,24 @@ export default function Chat() {
     const onChangeToken = () => {
         setToken(tokenInput)
         socket = io('ws://localhost:3001/chat', {
-            auth: { token }
+            auth: { token },
+            reconnection: true,
 
         });
     }
 
+
+    const findUserById = async () => {
+
+        socket.emit('createChat', { recipientId: createChatInput})
+
+
+    }
+
     return (
-        <>
+        <div>
+
+
 
             <div>
                 <p className='token'>{token}</p>
@@ -115,38 +160,84 @@ export default function Chat() {
                 <button onClick={onChangeToken}>Submit</button>
             </div>
 
-            <div className="chat-container">
-                <h2 className="chat-header">Chat</h2>
+            <div>
+                <input placeholder='find user' onChange={(e) => setCreateChatInput(e.target.value)}></input>
 
-                <div className="messages-list">
-                    {messages.map((msg) => (
-                        <div
-                            key={Math.random()}
-                            className={`message ${msg.userBaseId === user.id ? 'from-me' : 'from-other'}`}
-                        >
-                            <div className="message-header">
-                                <span className="message-time">
-                                    {new Date(msg.createdAt).toLocaleTimeString()}
-                                </span>
-                            </div>
-                            <div className="message-body">
-                                {msg.body}
-                            </div>
-                        </div>
+                <button onClick={findUserById}>Submit</button>
+            </div>
+
+            <div className='container-v'>
+                <div className='chats-list'>
+                    {chats?.map((ch: Chat) => (
+                        <div key={ch.id} className='chat'>
+                            <img src={ch.imageUrl}></img>
+                            <p>{ch.name}</p>
+                        </div> 
                     ))}
                 </div>
 
-                <div className="message-input">
-                    <input
-                        type="text"
-                        value={message}
-                        onChange={(e) => setMessage(e.target.value)}
-                        placeholder="Enter your message"
-                    />
-                    <button onClick={handleSendMessage}>Send</button>
+
+                <div className="chat-container">
+
+                    <div className='container-v'>
+
+                        <div key={chatData?.id} className='chat'>
+                            <img src={chatData?.imageUrl}></img>
+                            <h2 className="chat-header">{chatData?.name}</h2>
+                        </div>
+
+                        <div>
+
+                            {chatData?.members.map((member: Member) => (
+
+                                <div key={member.id} className='member'>
+                                    <p>{member.name}</p>
+                                </div>
+                            ))}
+
+
+
+                        </div>
+
+
+
+
+                    </div>
+
+
+
+
+
+                    <div className="messages-list">
+                        {messages.map((msg) => (
+                            <div
+                                key={Math.random()}
+                                className={`message ${msg.userBaseId === user.id ? 'from-me' : 'from-other'}`}>
+                                <div className="message-header">
+                                    <span className="message-time">
+                                        {new Date(msg.createdAt).toLocaleTimeString()}
+                                    </span>
+                                </div>
+                                <div className="message-body">
+                                    {msg.body}
+                                </div>
+                            </div>
+                        ))}
+                    </div>
+
+                    <div className="message-input">
+                        <input
+                            type="text"
+                            value={message}
+                            onChange={(e) => setMessage(e.target.value)}
+                            placeholder="Enter your message"
+                        />
+                        <button onClick={handleSendMessage}>Send</button>
+                    </div>
                 </div>
+
             </div>
 
-        </>
+        </div>
     )
 }
