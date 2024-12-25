@@ -1,0 +1,29 @@
+.chats-list {
+
+    display: flex;
+    flex-direction: column;
+    gap: 3rem;
+    overflow-y: auto;
+    align-items: center;
+    background-color: black;
+    /* height: 500px; */
+    padding: 0.5rem;
+    box-sizing: border-box;
+
+    border-top-left-radius: 10px;
+    border-bottom-left-radius: 10px;
+}
+
+.chat {
+    width: 100%;
+    color: #ffffff;
+    display: inline-flex;
+    flex-direction: column;
+    align-items: center;
+
+}
+
+
+.chat p {
+    margin: 0%;
+}
